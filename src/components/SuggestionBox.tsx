@@ -1,55 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { generateAutoSuggestion, extractMonacoCode, AIProvider } from '../utils/ai';
 
-const boxStyle: React.CSSProperties = {
-  position: 'fixed',
-  bottom: '40px',
-  right: '40px',
-  width: '400px',
-  backgroundColor: '#1E1E2E',
-  borderRadius: '8px',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-  border: '1px solid #45475A',
-  padding: '16px',
-  zIndex: 999999,
-  fontFamily: 'monospace',
-  color: '#Cdd6f4',
-  fontSize: '13px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-  opacity: 0.95,
-  pointerEvents: 'none' // Don't block clicks
-};
-
-const titleStyle: React.CSSProperties = {
-  fontWeight: 'bold',
-  color: '#89b4fa',
-  marginBottom: '4px',
-  borderBottom: '1px solid #45475A',
-  paddingBottom: '4px',
-  display: 'flex',
-  justifyContent: 'space-between'
-};
-
-const codeStyle: React.CSSProperties = {
-  whiteSpace: 'pre-wrap',
-  margin: 0,
-  maxHeight: '300px',
-  overflowY: 'auto'
-};
-
-const instructionStyle: React.CSSProperties = {
-  fontSize: '11px',
-  color: '#a6adc8',
-  textAlign: 'right',
-  marginTop: '8px'
-};
-
 export const SuggestionBox: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState('');
+  const [cursorState, setCursorState] = useState<{ top: number; left: number; lineContentLeft: number; fontFamily: string; fontSize: string; height: number } | null>(null);
 
   const [provider, setProvider] = useState<AIProvider>('openai');
   const [model, setModel] = useState('');
@@ -137,6 +93,37 @@ export const SuggestionBox: React.FC = () => {
     document.addEventListener('monaco-idle-5s', handleIdle as EventListener);
     return () => document.removeEventListener('monaco-idle-5s', handleIdle as EventListener);
   }, [isVisible, isLoading, provider, apiKey, model]);
+
+  useEffect(() => {
+    if (isVisible) {
+      const cursor = document.querySelector('.monaco-editor .cursor') as HTMLElement;
+      const linesContent = document.querySelector('.monaco-editor .lines-content') as HTMLElement;
+      if (cursor && linesContent) {
+        const cursorRect = cursor.getBoundingClientRect();
+        const contentRect = linesContent.getBoundingClientRect();
+        
+        let fontFamily = 'monospace';
+        let fontSize = '14px';
+        const viewLine = document.querySelector('.monaco-editor .view-line');
+        if (viewLine) {
+          const styles = window.getComputedStyle(viewLine);
+          fontFamily = styles.fontFamily;
+          fontSize = styles.fontSize;
+        }
+
+        setCursorState({
+          top: cursorRect.top,
+          left: cursorRect.left,
+          lineContentLeft: contentRect.left,
+          fontFamily,
+          fontSize,
+          height: cursorRect.height || parseInt(fontSize, 10) * 1.5
+        });
+      }
+    } else {
+      setCursorState(null);
+    }
+  }, [isVisible, suggestion]);
 
   const hideBox = () => {
     setIsVisible(false);
@@ -250,20 +237,86 @@ export const SuggestionBox: React.FC = () => {
     };
   }, [isVisible, suggestion, provider, apiKey, model]);
 
+  useEffect(() => {
+    const handleDismiss = () => {
+      if (isVisible) {
+        setIsVisible(false);
+        setSuggestion('');
+        setIsLoading(false);
+      }
+    };
+    document.addEventListener('mousedown', handleDismiss);
+    document.addEventListener('wheel', handleDismiss);
+    return () => {
+      document.removeEventListener('mousedown', handleDismiss);
+      document.removeEventListener('wheel', handleDismiss);
+    };
+  }, [isVisible]);
+
   if (!isVisible) return null;
+  if (!cursorState) return null;
+
+  if (isLoading) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: `${cursorState.top}px`,
+        left: `${cursorState.left}px`,
+        color: '#6e738d',
+        fontFamily: cursorState.fontFamily,
+        fontSize: cursorState.fontSize,
+        lineHeight: `${cursorState.height}px`,
+        pointerEvents: 'none',
+        zIndex: 999999,
+        opacity: 0.5
+      }}>
+        ...
+      </div>
+    );
+  }
+
+  if (!suggestion) return null;
+
+  const lines = suggestion.split('\n');
 
   return (
-    <div style={boxStyle}>
-      <div style={titleStyle}>
-        <span>✨ AI Auto Suggestion</span>
-        {isLoading && <span style={{ color: '#f9e2af' }}>Generating...</span>}
-      </div>
-      {!isLoading && suggestion && (
-        <>
-          <pre style={codeStyle}>{suggestion}</pre>
-          <div style={instructionStyle}>Press <kbd style={{backgroundColor: '#313244', padding: '2px 4px', borderRadius: '4px'}}>Tab</kbd> to accept, <kbd style={{backgroundColor: '#313244', padding: '2px 4px', borderRadius: '4px'}}>Esc</kbd> to dismiss</div>
-        </>
-      )}
+    <div style={{
+      position: 'fixed',
+      top: `${cursorState.top}px`,
+      left: `${cursorState.lineContentLeft}px`,
+      color: '#6e738d',
+      fontFamily: cursorState.fontFamily,
+      fontSize: cursorState.fontSize,
+      lineHeight: `${cursorState.height}px`,
+      pointerEvents: 'none',
+      zIndex: 999999,
+      opacity: 0.6
+    }}>
+      {lines.map((line, i) => {
+        if (i === 0) {
+          return (
+            <div key={i} style={{ 
+              whiteSpace: 'pre', 
+              position: 'absolute', 
+              left: `${cursorState.left - cursorState.lineContentLeft}px`,
+              top: 0
+            }}>
+              {line}
+            </div>
+          );
+        } else {
+          return (
+            <div key={i} style={{ 
+              whiteSpace: 'pre',
+              position: 'absolute',
+              left: 0,
+              top: `${i * cursorState.height}px`
+            }}>
+              {line}
+            </div>
+          );
+        }
+      })}
     </div>
   );
 };

@@ -7,7 +7,7 @@ export async function generateSuggestion(
   codeContext: string,
   query: string
 ): Promise<string> {
-  const prompt = `You are a competitive programming assistant. Here is the current code in the editor:\n\n${codeContext}\n\nThe user is asking for completion or suggestion: ${query}. Please provide ONLY the raw code snippet to insert at the cursor. Do not provide markdown formatting like \`\`\`python, just the raw code.`;
+  const prompt = `You are a competitive programming assistant. Here is the current code in the editor:\n\n${codeContext}\n\nThe user is asking for completion or suggestion: ${query}. Please provide ONLY the raw code snippet to insert at the cursor. Do not provide markdown formatting like \`\`\`python, just the raw code. MANDATORY: You must exactly match the indentation pattern (spaces/tabs) of the existing code.`;
 
   if (provider === 'openai') {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -66,7 +66,8 @@ CRITICAL RULES FOR OUTPUT:
 2. DO NOT wrap the code in markdown formatting (no \`\`\` language blocks).
 3. DO NOT output the target comment itself.
 4. DO NOT write or generate any code comments in your output. Only return executable code statements.
-5. Output strictly the raw code that belongs after the comment.`
+5. Output strictly the raw code that belongs after the comment.
+6. MANDATORY: You must exactly match and follow the indentation pattern (spaces/tabs) of the surrounding code.`
     : `You are an AI coding assistant. The user has paused typing. Continue the code logically from the current position.
 
 Program context:
@@ -77,7 +78,8 @@ CRITICAL RULES FOR OUTPUT:
 1. DO NOT output any conversational text, greetings, explanations, or notes.
 2. DO NOT wrap the code in markdown formatting (no \`\`\` language blocks).
 3. DO NOT write or generate any code comments in your output. Only return executable code statements.
-4. Output strictly the raw code that belongs at the current cursor position.`;
+4. Output strictly the raw code that belongs at the current cursor position.
+5. MANDATORY: You must exactly match and follow the indentation pattern (spaces/tabs) of the surrounding code.`;
 
   if (provider === 'openai') {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
