@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "LeetCode BFS Injector",
+  "version": "1.0",
+  "description": "Injects a Python BFS template into LeetCode's Monaco editor.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["*://leetcode.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://leetcode.com/problems/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "commands": {
+    "inject-snippet": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
+      },
+      "description": "Inject BFS snippet"
+    }
+  }
+}

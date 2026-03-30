@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "LeetCode Command Palette",
+  "version": "1.0",
+  "description": "Floating React Command Palette for LeetCode",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["*://leetcode.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://leetcode.com/problems/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
