@@ -87,15 +87,19 @@ export const CommandPalette: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    chrome.storage.local.get(['aiProvider', 'aiApiKey', 'aiModel'], (res) => {
-      if (res.aiProvider) setProvider(res.aiProvider as AIProvider);
-      if (res.aiApiKey) setApiKey(res.aiApiKey);
-      if (res.aiModel) setModel(res.aiModel);
-    });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['aiProvider', 'aiApiKey', 'aiModel'], (res) => {
+        if (res.aiProvider) setProvider(res.aiProvider as AIProvider);
+        if (res.aiApiKey) setApiKey(res.aiApiKey);
+        if (res.aiModel) setModel(res.aiModel);
+      });
+    }
   }, []);
 
   const saveSettings = () => {
-    chrome.storage.local.set({ aiProvider: provider, aiApiKey: apiKey, aiModel: model });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ aiProvider: provider, aiApiKey: apiKey, aiModel: model });
+    }
     setShowSettings(false);
   };
 

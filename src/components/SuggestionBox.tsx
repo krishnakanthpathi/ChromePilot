@@ -12,19 +12,21 @@ export const SuggestionBox: React.FC = () => {
   const [apiKey, setApiKey] = useState('');
 
   useEffect(() => {
-    chrome.storage.local.get(['aiProvider', 'aiApiKey', 'aiModel'], (res) => {
-      if (res.aiProvider) setProvider(res.aiProvider as AIProvider);
-      if (res.aiApiKey) setApiKey(res.aiApiKey);
-      if (res.aiModel) setModel(res.aiModel);
-    });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['aiProvider', 'aiApiKey', 'aiModel'], (res) => {
+        if (res.aiProvider) setProvider(res.aiProvider as AIProvider);
+        if (res.aiApiKey) setApiKey(res.aiApiKey);
+        if (res.aiModel) setModel(res.aiModel);
+      });
 
-    const changedListener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
-      if (changes.aiProvider) setProvider(changes.aiProvider.newValue);
-      if (changes.aiApiKey) setApiKey(changes.aiApiKey.newValue);
-      if (changes.aiModel) setModel(changes.aiModel.newValue);
-    };
-    chrome.storage.onChanged.addListener(changedListener);
-    return () => chrome.storage.onChanged.removeListener(changedListener);
+      const changedListener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+        if (changes.aiProvider) setProvider(changes.aiProvider.newValue);
+        if (changes.aiApiKey) setApiKey(changes.aiApiKey.newValue);
+        if (changes.aiModel) setModel(changes.aiModel.newValue);
+      };
+      chrome.storage.onChanged.addListener(changedListener);
+      return () => chrome.storage.onChanged.removeListener(changedListener);
+    }
   }, []);
 
   useEffect(() => {
