@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { CommandPalette } from './components/CommandPalette';
+import { SuggestionBox } from './components/SuggestionBox';
 
 console.log('[LeetCode Command Palette] Content script loaded.');
 
@@ -18,4 +19,9 @@ shadowRoot.appendChild(rootElement);
 
 // Render the React Command Palette component into the shadow root
 const root = createRoot(rootElement);
-root.render(<CommandPalette />);
+root.render(
+  <>
+    <CommandPalette />
+    <SuggestionBox />
+  </>
+);

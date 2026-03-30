@@ -44,6 +44,50 @@ export async function generateSuggestion(
   throw new Error('Invalid provider');
 }
 
+export async function generateAutoSuggestion(
+  provider: AIProvider, 
+  apiKey: string, 
+  modelChoice: string,
+  codeContext: string,
+  commentText: string
+): Promise<string> {
+  const prompt = `You are an expert AI coding assistant. The user is writing code in an online programming editor. Here is the current code:\n\n${codeContext}\n\nThe user has just typed the following comment and pressed Enter:\n"${commentText}"\n\nGenerate the exact code snippet that should follow this comment. Return ONLY the raw code. Do not include markdown code block syntax (like \`\`\`python) and do not include the comment itself in the output.`;
+
+  if (provider === 'openai') {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelChoice || 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2
+      })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    return data.choices[0].message.content.trim().replace(/^```[a-z]*\n/, '').replace(/\n```$/, '');
+  } else if (provider === 'gemini') {
+    const geminiModel = modelChoice || 'gemini-2.5-flash';
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    return data.candidates[0].content.parts[0].text.trim().replace(/^```[a-z]*\n/, '').replace(/\n```$/, '');
+  }
+  
+  throw new Error('Invalid provider');
+}
+
 export function extractMonacoCode(): string {
   const lines = Array.from(document.querySelectorAll('.view-line'));
   return lines.map(line => line.textContent || '').join('\n');
