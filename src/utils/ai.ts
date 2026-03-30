@@ -3,6 +3,7 @@ export type AIProvider = 'openai' | 'gemini';
 export async function generateSuggestion(
   provider: AIProvider, 
   apiKey: string, 
+  modelChoice: string,
   codeContext: string,
   query: string
 ): Promise<string> {
@@ -16,7 +17,7 @@ export async function generateSuggestion(
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: modelChoice || 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.2
       })
@@ -26,7 +27,8 @@ export async function generateSuggestion(
     
     return data.choices[0].message.content.trim().replace(/^```[a-z]*\n/, '').replace(/\n```$/, '');
   } else if (provider === 'gemini') {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`, {
+    const geminiModel = modelChoice || 'gemini-2.5-flash';
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

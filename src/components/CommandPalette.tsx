@@ -81,19 +81,21 @@ export const CommandPalette: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [provider, setProvider] = useState<AIProvider>('openai');
+  const [model, setModel] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    chrome.storage.local.get(['aiProvider', 'aiApiKey'], (res) => {
+    chrome.storage.local.get(['aiProvider', 'aiApiKey', 'aiModel'], (res) => {
       if (res.aiProvider) setProvider(res.aiProvider as AIProvider);
       if (res.aiApiKey) setApiKey(res.aiApiKey);
+      if (res.aiModel) setModel(res.aiModel);
     });
   }, []);
 
   const saveSettings = () => {
-    chrome.storage.local.set({ aiProvider: provider, aiApiKey: apiKey });
+    chrome.storage.local.set({ aiProvider: provider, aiApiKey: apiKey, aiModel: model });
     setShowSettings(false);
   };
 
@@ -177,7 +179,7 @@ export const CommandPalette: React.FC = () => {
     setIsGenerating(true);
     try {
       const codeContext = extractMonacoCode();
-      const suggestion = await generateSuggestion(provider, apiKey, codeContext, aiQueryText);
+      const suggestion = await generateSuggestion(provider, apiKey, model, codeContext, aiQueryText);
       insertSnippet({ id: 'ai-generated', title: 'AI Snippet', tags: [], code: suggestion });
     } catch (e: any) {
       alert("AI Generation failed: " + e.message);
@@ -274,6 +276,16 @@ export const CommandPalette: React.FC = () => {
                 <option value="openai">OpenAI</option>
                 <option value="gemini">Google Gemini</option>
               </select>
+            </div>
+            <div style={settingsRowStyle}>
+              <label>Model Name <br/><span style={{fontSize: '10px', color: '#888'}}>(Optional)</span></label>
+              <input 
+                type="text"
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                placeholder={provider === 'openai' ? 'e.g. gpt-4o-mini' : 'e.g. gemini-2.5-flash'}
+                style={{ padding: '4px', backgroundColor: '#1e1e1e', color: '#e0e0e0', border: '1px solid #444', borderRadius: '4px', width: '200px' }}
+              />
             </div>
             <div style={settingsRowStyle}>
               <label>API Key</label>
