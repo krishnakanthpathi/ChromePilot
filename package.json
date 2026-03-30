@@ -1,5 +1,5 @@
 {
-  "name": "leetcode-command-palette",
+  "name": "chromepilot",
   "version": "1.0.0",
   "description": "Floating Command Palette for LeetCode",
   "main": "index.js",

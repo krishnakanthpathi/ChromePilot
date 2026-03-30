@@ -1,6 +1,6 @@
-# LeetCode Command Palette & AI Copilot
+# ChromePilot
 
-A powerful Chrome Extension that supercharges your LeetCode experience by bringing a modern Command Palette and an intelligent inline AI Auto-Suggest (Ghost Text) directly into the LeetCode Monaco editor.
+A powerful Chrome Extension that supercharges your coding experience by bringing a modern Command Palette and an intelligent inline AI Auto-Suggest (Ghost Text) directly into the LeetCode Monaco editor.
 
 ## ✨ Features
 
