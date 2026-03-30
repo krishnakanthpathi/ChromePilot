@@ -51,7 +51,8 @@ export async function generateAutoSuggestion(
   codeContext: string,
   commentText: string
 ): Promise<string> {
-  const prompt = `You are an AI coding assistant. Generate code purely based on following comment. Do not try to solve the overall question, only implement what the comment strictly asks for.
+  const prompt = commentText
+    ? `You are an AI coding assistant. Generate code purely based on following comment. Do not try to solve the overall question, only implement what the comment strictly asks for.
 
 Program context:
 ${codeContext}
@@ -65,7 +66,18 @@ CRITICAL RULES FOR OUTPUT:
 2. DO NOT wrap the code in markdown formatting (no \`\`\` language blocks).
 3. DO NOT output the target comment itself.
 4. DO NOT write or generate any code comments in your output. Only return executable code statements.
-5. Output strictly the raw code that belongs after the comment.`;
+5. Output strictly the raw code that belongs after the comment.`
+    : `You are an AI coding assistant. The user has paused typing. Continue the code logically from the current position.
+
+Program context:
+${codeContext}
+
+Provide ONLY the raw code implementation to logically continue the program.
+CRITICAL RULES FOR OUTPUT:
+1. DO NOT output any conversational text, greetings, explanations, or notes.
+2. DO NOT wrap the code in markdown formatting (no \`\`\` language blocks).
+3. DO NOT write or generate any code comments in your output. Only return executable code statements.
+4. Output strictly the raw code that belongs at the current cursor position.`;
 
   if (provider === 'openai') {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -71,6 +71,73 @@ export const SuggestionBox: React.FC = () => {
     return () => chrome.storage.onChanged.removeListener(changedListener);
   }, []);
 
+  useEffect(() => {
+    let idleTimeout: NodeJS.Timeout;
+
+    const startIdleTimer = () => {
+      clearTimeout(idleTimeout);
+      idleTimeout = setTimeout(() => {
+        setIsVisible((prevIsVisible) => {
+          if (prevIsVisible) return prevIsVisible;
+          document.dispatchEvent(new CustomEvent('monaco-idle-5s'));
+          return prevIsVisible;
+        });
+      }, 5000);
+    };
+
+    const handleInteraction = () => {
+      startIdleTimer();
+    };
+
+    document.addEventListener('keydown', handleInteraction, { capture: true });
+    document.addEventListener('mousedown', handleInteraction, { capture: true });
+    startIdleTimer();
+
+    return () => {
+      clearTimeout(idleTimeout);
+      document.removeEventListener('keydown', handleInteraction, { capture: true });
+      document.removeEventListener('mousedown', handleInteraction, { capture: true });
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleIdle = async () => {
+      if (isVisible || isLoading) return;
+      if (!apiKey) return;
+      
+      const activeEl = document.activeElement;
+      const isMonacoEditor = activeEl && activeEl.tagName === 'TEXTAREA' && activeEl.closest('.monaco-editor');
+      if (!isMonacoEditor) return;
+
+      const code = extractMonacoCode();
+      if (!code.trim()) return;
+
+      setIsVisible(true);
+      setIsLoading(true);
+      setSuggestion('');
+
+      try {
+        const res = await generateAutoSuggestion(provider, apiKey, model, code, '');
+        if (res) {
+          setSuggestion(res);
+          setIsLoading(false);
+        } else {
+          setIsVisible(false);
+          setIsLoading(false);
+          setSuggestion('');
+        }
+      } catch (err) {
+        console.error('Failed to generate idle auto suggestion', err);
+        setIsVisible(false);
+        setIsLoading(false);
+        setSuggestion('');
+      }
+    };
+    
+    document.addEventListener('monaco-idle-5s', handleIdle as EventListener);
+    return () => document.removeEventListener('monaco-idle-5s', handleIdle as EventListener);
+  }, [isVisible, isLoading, provider, apiKey, model]);
+
   const hideBox = () => {
     setIsVisible(false);
     setSuggestion('');
